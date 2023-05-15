@@ -15,8 +15,13 @@
 
 #include <time.h>
 
-typedef enum { false, true } bool;
+#define MAX_SLOWA 100
+#define MAX_DLUGOSC_SLOWA 50
 
+typedef enum { false, true } bool;
+char slowa[MAX_SLOWA][MAX_DLUGOSC_SLOWA];
+
+const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku);
 bool check_letter(char* letter, char* word);
 void insertionSort(char arr[], int n);
 void print_char_array(char arr[], int size);
@@ -84,33 +89,21 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
 
 
 
- char words[][10] = {
-        "paula",
-        "domek",
-        "bajda",
-        "myszka",
-        "kuba"
-    };
+  const char* nazwa_pliku = "slowa.txt";
+    const char* wylosowane_slowo = losuj_i_zwroc_slowo_z_pliku(nazwa_pliku);
 
-    int i;
-    int length = sizeof(words) / sizeof(words[0]);
-
-    for (i = 0; i < length; i++) {
-        printf("%s\n", words[i]);
-    }
-
-    srand(time(NULL));
-    int indeks = rand() % length;
-
-    int dlugosc = strlen(words[indeks]);
+        printf("Wylosowane slowo: %s\n", wylosowane_slowo);
+        int dlugosc = strlen(wylosowane_slowo);
+        printf("Dlugosc wylosowanego slowa: %d\n", dlugosc);
 
     char ack[dlugosc];
+    strcpy(ack, wylosowane_slowo);
     char ack1[dlugosc];
+    strcpy(ack1, wylosowane_slowo);
 
-    strcpy(ack, words[indeks]);
-    printf("slowo: %s\n", ack);
-    strcpy(ack1, words[indeks]);
-    printf("slowo1: %c\n", ack1[0]);
+     printf("ack: %s\n", ack);
+
+
 
 
 
@@ -171,7 +164,8 @@ for (int i = 0 ; i< size1;i++){
       k++;
     }
       memset(buffer, 0, sizeof(buffer)); 
-      if (k==size1-2){
+      printf("K: %d\n Size:%d\n",k,size1);
+      if (k==size1){
       insertionSort(zgadniete,size1);
       insertionSort(haslo,size1);
        if ( memcmp ( zgadniete, haslo,size1 ) == 0){
@@ -192,8 +186,9 @@ for (int i = 0 ; i< size1;i++){
     }
     else{
       liczba_prob--;
-      printf("znak: %s\n",buffer);
-      rc = send(client, nieprawda, strlen(nieprawda) + 1, 0);
+      char message1[100];
+      sprintf(message1,"litera się nie znajduje w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s",liczba_prob,wysalanie);
+      rc = send(client,message1, strlen(message1) + 1, 0);
       
     }
     if(rc<0) {
@@ -330,6 +325,46 @@ bool isCharInArray(char arr[], int size, char ch) {
     }
     return false;  // Znak nie jest w tablicy
 }
+
+
+const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku)
+{
+    // Inicjalizacja generatora liczb pseudolosowych
+    srand(time(NULL));
+
+    // Otwieranie pliku
+    FILE* plik = fopen(nazwa_pliku, "r");
+    if (plik == NULL)
+    {
+        printf("Nie udalo sie otworzyc pliku.\n");
+        return NULL;
+    }
+
+    // Wczytywanie slow z pliku do tablicy
+    int ilosc_slow = 0;
+
+    char slowo[MAX_DLUGOSC_SLOWA];
+    while (ilosc_slow < MAX_SLOWA && fscanf(plik, "%s", slowo) == 1)
+    {
+        strcpy(slowa[ilosc_slow], slowo);
+        ilosc_slow++;
+    }
+
+    fclose(plik);
+
+    if (ilosc_slow == 0)
+    {
+        printf("Brak slow w pliku.\n");
+        return NULL;
+    }
+
+    // Wylosowanie indeksu slowa
+    int indeks = rand() % ilosc_slow;
+
+    // Zwracanie wylosowanego slowa
+    return slowa[indeks];
+}
+
 // bool compare ( char tab[] , char tab1[]  ){
 //  int size = sizeof(tab) / (sizeof(tab[0]));
 //  int size1 = sizeof(tab1) / (sizeof(tab1[0]));
