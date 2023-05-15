@@ -1,0 +1,59 @@
+Open sidebar
+C funkcja zapisu pliku
+
+
+User
+mam plik .txt:
+dom, zgadnij, paulina, kuba, bajdecki, chuj
+
+chcę napisać funkcję w C która będzie zapisywała słowa z tego pliku do tablicy stringów
+
+ChatGPT
+Oczywiście! Oto przykładowa funkcja w języku C, która czyta słowa z pliku tekstowego i zapisuje je do tablicy stringów:
+
+c
+Copy code
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_WORDS 100   // maksymalna liczba słów
+
+void readWordsFromFile(const char* filename, char** words, int* numWords) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Nie można otworzyć pliku.\n");
+        return;
+    }
+
+    char word[100];  // maksymalna długość pojedynczego słowa
+    *numWords = 0;
+
+    while (*numWords < MAX_WORDS && fscanf(file, "%99s", word) == 1) {
+        words[*numWords] = malloc((strlen(word) + 1) * sizeof(char));
+        strcpy(words[*numWords], word);
+        (*numWords)++;
+    }
+
+    fclose(file);
+}
+
+int main() {
+    const char* filename = "przyklad.txt";
+    char* words[MAX_WORDS];
+    int numWords = 0;
+
+    readWordsFromFile(filename, words, &numWords);
+
+    // Wyświetlenie słów z tablicy
+    for (int i = 0; i < numWords; i++) {
+        printf("%s\n", words[i]);
+    }
+
+    // Zwolnienie pamięci
+    for (int i = 0; i < numWords; i++) {
+        free(words[i]);
+    }
+
+    return 0;
+}

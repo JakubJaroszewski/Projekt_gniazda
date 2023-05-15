@@ -15,6 +15,8 @@
 
 #include <time.h>
 
+
+
 typedef enum { false, true } bool;
 
 bool check_letter(char* letter, char* word);
