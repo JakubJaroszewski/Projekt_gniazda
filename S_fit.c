@@ -18,6 +18,10 @@
 #define MAX_DLUGOSC_SLOWA 50
 typedef enum { false, true } bool;
 char slowa[MAX_SLOWA][MAX_DLUGOSC_SLOWA];
+
+bool HELP(char arr[]);
+
+bool fullcheck(char arr1[], char arr2[], int size);
 const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku);
 int* find_character(const char* word, char character, int* count);
 bool check_letter(char* letter, char* word);
@@ -87,6 +91,7 @@ while(1){
 
 
 
+
 //   char ack[] = "murbatron";
 //   char ack1[] = "murbatron"; // jezeli wpiszemy slowo zgadnda to nie mozemy zgadnac hasla
 
@@ -96,6 +101,8 @@ while(1){
         printf("Wylosowane slowo: %s\n", wylosowane_slowo);
         int dlugosc = strlen(wylosowane_slowo);
         printf("Dlugosc wylosowanego slowa: %d\n", dlugosc);
+
+
 
     char ack[dlugosc];
     strcpy(ack, wylosowane_slowo);
@@ -130,6 +137,31 @@ while(1){
     }
 
     printf("%s: received %u bytes: %s\n",argv[0],rc,buffer);
+
+        if(fullcheck(buffer,ack,dlugosc)){
+            char mess[100];  
+            sprintf(mess, "zgadłes haslo! \nhasło to: %s", ack1);
+            rc = send(client, mess, strlen(mess) + 1, 0);
+            close(client);
+      break;
+        }
+    if(rc>3){
+        if(HELP(buffer)){
+        rc = send(client, "gra wisielec", strlen("gra wisielec") + 1, 0);
+        continue; 
+        }
+        else{
+        if(!fullcheck(buffer,ack,dlugosc)){
+        printf("XDXD");
+        char messag[100];
+      sprintf(messag, "Koniec gry, błędne hasło");
+      rc = send(client, messag, strlen(messag) + 1, 0);
+      liczba_prob==0;
+      close(client);
+      break;}
+    }
+    }
+
 
     char nieprawda[] = "litera się nie znajduje w haśle";
  for (int i = 0 ; i< size1;i++){
@@ -174,6 +206,8 @@ while(1){
        char message[100];  
         sprintf(message, "zgadłes haslo! \nhasło to: %s", ack1);
         rc = send(client, message, strlen(message) + 1, 0);
+         close(client);
+      break;
        }
       }
       char message[100];
@@ -469,3 +503,25 @@ const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku)
 //  return true;
   
 // }
+
+bool fullcheck(char arr1[], char arr2[],int size) {
+    
+
+    for (int i = 0; i < size; i++) {
+        if (arr1[i] != arr2[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool HELP(char arr[]){
+char wzor[]="HELP";
+     for (int i = 0; i < 4; i++) {
+        if (arr[i] != wzor[i]) {
+            return false;
+        }
+    return true;
+    }
+}
