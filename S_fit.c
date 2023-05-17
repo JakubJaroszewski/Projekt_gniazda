@@ -12,16 +12,14 @@
 #include <stdlib.h>
 #include <unistd.h> /* close */
 #include <string.h> /* memset() */
-
 #include <time.h>
 
 #define MAX_SLOWA 100
 #define MAX_DLUGOSC_SLOWA 50
-
 typedef enum { false, true } bool;
 char slowa[MAX_SLOWA][MAX_DLUGOSC_SLOWA];
-
 const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku);
+int* find_character(const char* word, char character, int* count);
 bool check_letter(char* letter, char* word);
 void insertionSort(char arr[], int n);
 void print_char_array(char arr[], int size);
@@ -29,6 +27,7 @@ bool isCharInArray(char arr[], int size, char ch);
 void removeDuplicates(char arr[], int size);
 char* createStringWithUnderscores(int length);
 void replace(char* str, const char* old, char new, const int* indices);
+void replace_one(char* str, const char* old, char new, int index);
 int* findCharOccurrences(char character, const char* string, int* numOccurrences) ;
 void print_int_array(int arr[], int size) ;
 int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
@@ -74,7 +73,7 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
   }
 
   printf("%s: listening for incoming connections on port %d\n",argv[0],PORT);
-
+while(1){
   clientLen = sizeof(clientAddr);
   
   /* wait for client connection */
@@ -88,6 +87,8 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
 
 
 
+//   char ack[] = "murbatron";
+//   char ack1[] = "murbatron"; // jezeli wpiszemy slowo zgadnda to nie mozemy zgadnac hasla
 
   const char* nazwa_pliku = "slowa.txt";
     const char* wylosowane_slowo = losuj_i_zwroc_slowo_z_pliku(nazwa_pliku);
@@ -102,13 +103,7 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
     strcpy(ack1, wylosowane_slowo);
 
      printf("ack: %s\n", ack);
-
-
-
-
-
   int size2=sizeof(ack) / sizeof(ack[0]);
-  printf("slowosize1: %d\n", size2);
   removeDuplicates(ack,size2);
 
   int size1=sizeof(ack) / sizeof(ack[0]);
@@ -118,57 +113,64 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
   char* wysalanie = createStringWithUnderscores(size1);
    int k=0;
    int liczba_prob=15;
+   int powtorzenia=0;
   while(1) {
     memset(buffer, 0x0, sizeof(buffer));
     rc = recv(client, buffer, sizeof(buffer), 0);
     if(rc<0) {
       perror("cannot receive data ");
-      close(sd);
-      exit(1);
+      close(client);
+      break;
     }
 
     if(rc==0) {
       printf("%s: connection closed\n",argv[0]);
-      close(sd);
-      exit(1);
+      close(client);
+      break;
     }
 
     printf("%s: received %u bytes: %s\n",argv[0],rc,buffer);
 
     char nieprawda[] = "litera się nie znajduje w haśle";
-for (int i = 0 ; i< size1;i++){
-    haslo[i]=ack[i];
-    printf("%c \n",haslo[i]);
-  }
+ for (int i = 0 ; i< size1;i++){
+     haslo[i]=ack[i];
+     printf("%c \n",haslo[i]);
+   }
 
     
     if (check_letter(buffer,ack)){ 
-    liczba_prob--;
     if (liczba_prob == 0){
       char message[37];
       sprintf(message, "Koniec gry, zbyt duża liczba prób");
       rc = send(client, message, strlen(message) + 1, 0);
-      close(sd);
-      exit(1);
+      close(client);
+      break;
 
     }
-       printf("znak: %s\n", buffer);  
+    //    printf("znak: %s\n", buffer);  
     if ( ! isCharInArray(zgadniete,size1,buffer[0])){
-      zgadniete[k] = buffer[0];
-      int numOccurrences = 0;
-       int* occurrences= findCharOccurrences(buffer[0], ack1,&numOccurrences); /* dla slowa zgadnia wszystko działa jak powinno, dla słowa kupsko juz nie [mozliwe ze chodzi o to ze k jest na 0 i 4 miejscu, dokladniej ze litera która występuje dwa razy znajduje sie na 0 miejscu i cos sie w funkcji pierdoli] 
-       UPDATE
-       raczej na pewno chodzi o to ze w slowie kupsko k jest na 0 i 4 miejscu, testowałem to dla paru innych słów gdzie lietra która występuje 2 razy nie znajduje sie na 0 miejscu i wsystko działa, możesz sprobować to naprawić, ja juz cos tam grzebałem przy niej bo ewidentnnie cos jest nie tak, komenatrze nizej*/
-      replace(wysalanie,"_",buffer[0],occurrences);
-      free(occurrences);
-      k++;
+       zgadniete[k]=buffer[0];
+       int numOccurrences = 0;
+       int* occurrences= find_character(ack1,buffer[0],&numOccurrences); 
+       if (numOccurrences == 1){
+            replace_one(wysalanie,"_",buffer[0],occurrences[0]);
+       }
+       else{
+            replace(wysalanie,"_",buffer[0],occurrences);
+            powtorzenia++;
+       }
+       free(occurrences);
+       k++;
     }
       memset(buffer, 0, sizeof(buffer)); 
-      printf("K: %d\n Size:%d\n",k,size1);
-      if (k==size1){
-      insertionSort(zgadniete,size1);
-      insertionSort(haslo,size1);
-       if ( memcmp ( zgadniete, haslo,size1 ) == 0){
+      printf("k= %d  size=%d powtorzneia=%d",k,size1,powtorzenia);
+      if (k==size1-powtorzenia){
+      insertionSort(zgadniete,k);
+      insertionSort(haslo,k);
+      print_char_array(zgadniete,k);
+      print_char_array(haslo,k);
+      printf("%d", memcmp ( zgadniete, haslo,k ));
+       if ( memcmp ( zgadniete, haslo,k ) == 0){
        char message[100];  
         sprintf(message, "zgadłes haslo! \nhasło to: %s", ack1);
         rc = send(client, message, strlen(message) + 1, 0);
@@ -178,28 +180,28 @@ for (int i = 0 ; i< size1;i++){
       sprintf(message,"litera się znajduje w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s",liczba_prob,wysalanie);
       rc = send(client,message, strlen(message) + 1, 0);
 
-     for(int i=0;i<k+1;i++){
-       printf("znak: %c\n",zgadniete[i]);}
+    //  for(int i=0;i<k+1;i++){
+    //    printf("znak: %c\n",zgadniete[i]);}
 
     
    
     }
     else{
       liczba_prob--;
-      char message1[100];
-      sprintf(message1,"litera się nie znajduje w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s",liczba_prob,wysalanie);
-      rc = send(client,message1, strlen(message1) + 1, 0);
+      printf("znak: %s\n",buffer);
+      rc = send(client, nieprawda, strlen(nieprawda) + 1, 0);
       
     }
     if(rc<0) {
       perror("cannot send acknowledgment ");
-      close(sd);
-      exit(1);
+      close(client);
+      break;
     }
 
     printf("%s: hasło: %s\n", argv[0], ack);
   }
-
+}
+close(sd);
   return 0;
 }
 
@@ -222,7 +224,17 @@ bool check_letter(char* letter, char* word) {
     return false;
 }
 
+void replace_one(char* str, const char* old, char new, int index) {
+    size_t old_len = strlen(old);
+    
+    if (index >= 0 && index < strlen(str)) {
+        if (memcmp(str + index, old, old_len) == 0) {
+            str[index] = new;
+        }
+    }
+}
 void replace(char* str, const char* old, char new, const int* indices) {
+   // print_int_array(indices,1);
     size_t old_len = strlen(old);
     int size = sizeof(indices) / sizeof(indices[0]);
     for (int i = 0; i < size; i++) {
@@ -237,7 +249,7 @@ void replace(char* str, const char* old, char new, const int* indices) {
 }
 void print_char_array(char arr[], int size) {
     for (int i = 0; i < size; i++) {
-        printf("%s ", arr[i]);
+        printf("%c ", arr[i]);
     }
     printf("\n");
 }
@@ -254,26 +266,100 @@ void insertionSort(char arr[], int n) {
         arr[j + 1] = key;
     }
 }
-int* findCharOccurrences(char character, const char* string, int* numOccurrences) {
-    int length = strlen(string);
-    int* occurrences = malloc(length * sizeof(int));
-    int index = 0;
-
-    for (int i = 0; i < length+1; i++) { /*
-    tutaj jest problem z ta dlugościa, nie rozkmniałem tego jakos długo dlaczego nie działa poprtu troche potestowałem i zoabczłem ze nie wypisuje odpowiedniej dluosci tablicy wiec stad to +1, ale cos jeszcze jest tutaj skurwione ewidentnie*/
-        if (string[i] == character) {
-            occurrences[index] = i;
-            index++;
+int* find_character(const char* word, char character, int* count) {
+    int length = 0;
+    int i;
+    int* indices;
+    
+    // Zliczanie liczby wystąpień danego znaku w słowie
+    for (i = 0; word[i] != '\0'; i++) {
+        if (word[i] == character) {
+            length++;
         }
     }
-
-    if (index == 0) {
-        free(occurrences);
-        return NULL;
+    
+    // Tworzenie tablicy dla indeksów znalezionych znaków
+    if (length == 1) {
+        indices = (int*)malloc(sizeof(int));
+        for (i = 0; word[i] != '\0'; i++) {
+            if (word[i] == character) {
+                indices[0] = i;
+                break;
+            }
+        }
+    } else {
+        indices = (int*)malloc(length * sizeof(int));
+        int index = 0;
+        
+        // Zapisywanie indeksów znalezionych znaków
+        for (i = 0; word[i] != '\0'; i++) {
+            if (word[i] == character) {
+                indices[index++] = i;
+            }
+        }
     }
-    *numOccurrences = index;
-    return occurrences;
+    
+    *count = length; // Przekazanie liczby wystąpień przez wskaźnik
+    
+    return indices;
 }
+
+
+// int* find_character(const char* word, char character, int* count) {
+//     int length = 0;
+//     int i;
+    
+//     // Zliczanie liczby wystąpień danego znaku w słowie
+//     for (i = 0; word[i] != '\0'; i++) {
+//         // printf("znak %d: %c \n",i, word[i]);
+//         // printf("litera %d: %c \n",i, character);
+//         if (word[i] == character) {
+//             length++;
+//         }
+//     }
+//     // Tworzenie tablicy dla indeksów znalezionych znaków
+//     int* indices = (int*)malloc(length* sizeof(int));
+//     int index = 0;
+    
+//     // Zapisywanie indeksów znalezionych znaków
+//     for (i = 0;  word[i] != '\0' ; i++) {
+//         if (word[i] == character) {
+//             indices[index++] = i;
+            
+//         }
+//     }
+//     *count = length; // Przekazanie liczby wystąpień przez wskaźnik
+//     if (length == 1){
+//         return indices[0];
+//     }
+//     else{
+//         return indices;
+//     }
+// }
+// int* findCharOccurrences(char character, const char* string, int* numOccurrences) {
+    
+//     int length = strlen(string);
+//     int* occurrences = malloc(length * sizeof(int));
+//     print_int_array(occurrences,2);
+//     int index = 0;
+//     printf("\n %c",string[0]);
+
+//     for (int i = 0; i < length+1; i++) { /*
+//     tutaj jest problem z ta dlugościa, nie rozkmniałem tego jakos długo dlaczego nie działa poprtu troche potestowałem i zoabczłem ze nie wypisuje odpowiedniej dluosci tablicy wiec stad to +1, ale cos jeszcze jest tutaj skurwione ewidentnie*/
+//         if (string[i] == character) {
+//             occurrences[index] = i;
+//             index++;
+//         }
+//     }
+
+//     if (index == 0) {
+//         free(occurrences);
+//         return NULL;
+//     }
+//     *numOccurrences = index;
+    
+//     return occurrences;
+// }
 
 void removeDuplicates(char arr[], int size) {
     int index = 0;  // Indeks dla unikalnych znaków
@@ -325,8 +411,6 @@ bool isCharInArray(char arr[], int size, char ch) {
     }
     return false;  // Znak nie jest w tablicy
 }
-
-
 const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku)
 {
     // Inicjalizacja generatora liczb pseudolosowych
@@ -364,7 +448,6 @@ const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku)
     // Zwracanie wylosowanego slowa
     return slowa[indeks];
 }
-
 // bool compare ( char tab[] , char tab1[]  ){
 //  int size = sizeof(tab) / (sizeof(tab[0]));
 //  int size1 = sizeof(tab1) / (sizeof(tab1[0]));
