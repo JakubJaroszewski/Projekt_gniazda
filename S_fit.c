@@ -16,25 +16,24 @@
 
 #define MAX_SLOWA 100
 #define MAX_DLUGOSC_SLOWA 50
+
 typedef enum { false, true } bool;
 char slowa[MAX_SLOWA][MAX_DLUGOSC_SLOWA];
 
-bool HELP(char arr[]);
-bool GAME(char arr[]);
-bool EXIT(char arr[]);
+//deklaracje używanych funkcji
+bool HELP(char arr[]); 
 bool fullcheck(char arr1[], char arr2[], int size);
-const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku);
+const char* choose_word(const char* nazwa_pliku);
 int* find_character(const char* word, char character, int* count);
 bool check_letter(char* letter, char* word);
-void insertionSort(char arr[], int n);
-void print_char_array(char arr[], int size);
 bool isCharInArray(char arr[], int size, char ch);
 void removeDuplicates(char arr[], int size);
 char* createStringWithUnderscores(int length);
 void replace(char* str, const char* old, char new, const int* indices);
 void replace_one(char* str, const char* old, char new, int index);
 int* findCharOccurrences(char character, const char* string, int* numOccurrences) ;
-void print_int_array(int arr[], int size) ;
+
+
 int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
 
   const int PORT=1500;
@@ -46,21 +45,21 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
   socklen_t clientLen;
 
 
-  /* create socket */
+//utworzenie gniazda
   sd = socket(AF_INET, SOCK_STREAM, 0);
   if(sd<0) {
     perror("cannot open socket ");
     exit(1);
   }
 
-  /* set socket option */
+//wielokrotne używanie adresu
   rc = setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
   if (rc<0) {
     perror("cannot set socket option ");
     exit(1);
   }
 
-  /* bind server port */
+//przypisanie adresu i portu do gniazda, bind
   servAddr.sin_family = AF_INET;
   servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
   servAddr.sin_port = htons(PORT);
@@ -70,57 +69,66 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
     exit(1);
   }
 
-  /* specify queue */
-  rc = listen(sd,5);
+//program obsługuje max 1 połączenie
+  rc = listen(sd,1);
   if(rc<0) {
     perror("cannot listen ");
     exit(1);
   }
 
-  printf("%s: listening for incoming connections on port %d\n",argv[0],PORT);
+//nasłuchiwanie
+  printf("%s: nasłuchiwanie na porcie %d\n",argv[0],PORT);
+
 while(1){
+
+
   clientLen = sizeof(clientAddr);
   
-  /* wait for client connection */
+//połączenie z klientem
   client = accept(sd, (struct sockaddr *) &clientAddr, &clientLen);
   if(client<0) {
     perror("cannot accept ");
     exit(1);
   }
-
-  printf("%s: received connection from %s\n",argv[0],inet_ntoa(clientAddr.sin_addr));
-
+  printf("%s: nawiązane połączenie z: %s\n",argv[0],inet_ntoa(clientAddr.sin_addr));
 
 
-  const char* nazwa_pliku = "slowa.txt";
-    const char* wylosowane_slowo = losuj_i_zwroc_slowo_z_pliku(nazwa_pliku);
+//losowanie słowa z bazy
+    const char* nazwa_pliku = "slowa.txt";
+    const char* wylosowane_slowo = choose_word(nazwa_pliku);
 
-        printf("Wylosowane slowo: %s\n", wylosowane_slowo);
-        int dlugosc = strlen(wylosowane_slowo);
-        printf("Dlugosc wylosowanego slowa: %d\n", dlugosc);
+    printf("Wylosowane slowo: %s\n", wylosowane_slowo);
+    int dlugosc = strlen(wylosowane_slowo);
+    printf("Dlugosc wylosowanego slowa: %d\n", dlugosc);
 
 
-
+//tworzenie tablicy z hasłem
     char ack[dlugosc];
     strcpy(ack, wylosowane_slowo);
     char ack1[dlugosc];
     strcpy(ack1, wylosowane_slowo);
 
-     printf("ack: %s\n", ack);
-  int size2=sizeof(ack) / sizeof(ack[0]);
-  removeDuplicates(ack,size2);
+//usuwanie powtarzających się liter z hasła
+    int size2=sizeof(ack) / sizeof(ack[0]);
+    removeDuplicates(ack,size2);
 
   int size1=sizeof(ack) / sizeof(ack[0]);
   char haslo[size1];
+
+//tablica zgadniętych liter
   char zgadniete[size1];
-  //utworzenie stringa zawierającego same "_______"
+
+//utworzenie stringa zawierającego same "_______"
   char* wysalanie = createStringWithUnderscores(size1);
+
+//k - liczba zgadniętych liter
    int k=0;
    int liczba_prob=15;
    int powtorzenia=0;
-  while(1) {
-    
 
+  while(1) {
+
+//otrzymanie litery/hasła od klienta
     memset(buffer, 0x0, sizeof(buffer));
     rc = recv(client, buffer, sizeof(buffer), 0);
     if(rc<0) {
@@ -130,56 +138,54 @@ while(1){
     }
 
     if(rc==0) {
-      printf("%s: connection closed\n",argv[0]);
-      close(client);
-      break;
+      continue;
     }
 
-if(HELP(buffer)==0){
+//zabezpieczenie: uppercase->lowercase, hasła w bazie są w małych
+if(HELP(buffer)==0){ //HELP wielkimi wywołuje pomoc, HELP nie chcemy pomniejszać
      for (int i = 0 ; i< size1;i++){
      buffer[i]=tolower(buffer[i]);
    }
   }
 
 
-    
-    printf("%s: received %u bytes: %s\n",argv[0],rc,buffer);
+//jeżeli klient wpisze kilka liter
 
-        if(fullcheck(buffer,ack,dlugosc)){
-            char mess[100];  
-            sprintf(mess, "zgadłes haslo! \nhasło to: %s\n", ack1);
-            rc = send(client, mess, strlen(mess) + 1, 0);
-           close(client);
-  
-      break;
-        }
+//sprawdza poprawność hasła
+    if(fullcheck(buffer,ack1,dlugosc)){
+        char mess[100];  
+        sprintf(mess, "zgadłes haslo! \nhasło to: %s\n", ack1);
+        rc = send(client, mess, strlen(mess) + 1, 0);
+        close(client);
+        break;
+     
+    }
     if(rc>3){
+//Wywołuje pomoc
         if(HELP(buffer)){
         rc = send(client, "gra zgadywanie słów. użytkownik ma 15 prób na zgadnięcie pasujących liter; istnieje możliwość zgadnięcia całego hasła - jeżeli będzie błędne, gra się kończy", strlen("gra zgadywanie słów. użytkownik ma 15 prób na zgadnięcie pasujących liter; istnieje możliwość zgadnięcia całego hasła - jeżeli będzie błędne, gra się kończy") + 1, 0);
         continue; 
         }
+//Jeżeli hasło błędne - koniec gry
         else{
-        if(!fullcheck(buffer,ack,dlugosc)){
-        printf("XDXD");
-        char messag[100];
-      sprintf(messag, "Koniec gry, błędne hasło");
-      rc = send(client, messag, strlen(messag) + 1, 0);
-      liczba_prob==0;
-      close(client);
-      break;}
+            if(!fullcheck(buffer,ack,dlugosc)){
+                char messag[100];
+                sprintf(messag, "Koniec gry, błędne hasło");
+                rc = send(client, messag, strlen(messag) + 1, 0);
+                liczba_prob==0;
+                close(client);
+                break;}
     }
     }
 
 
-    char nieprawda[] = "litera się nie znajduje w haśle";
- for (int i = 0 ; i< size1;i++){
-     haslo[i]=ack[i];
-     printf("%c \n",haslo[i]);
-   }
+    for (int i = 0 ; i< size1;i++){
+        haslo[i]=ack[i];
+    }
 
-    
+//sprawdzanie, czy litera jest w haśle
     if (check_letter(buffer,ack)){ 
-    if (liczba_prob == 0){
+    if (liczba_prob == 0){ //koniec prób, koniec gry
       char message[37];
       sprintf(message, "Koniec gry, zbyt duża liczba prób");
       rc = send(client, message, strlen(message) + 1, 0);
@@ -187,44 +193,40 @@ if(HELP(buffer)==0){
       break;
 
     }
-    //    printf("znak: %s\n", buffer);  
+
+//sprawdzenie, czy litera jest już w bazie zgadniętych liter
     if ( ! isCharInArray(zgadniete,size1,buffer[0])){
        zgadniete[k]=buffer[0];
        int numOccurrences = 0;
+//sprawdzanie, czy występują powtórzenia liter
        int* occurrences= find_character(ack1,buffer[0],&numOccurrences); 
-       if (numOccurrences == 1){
+       if (numOccurrences == 1){ //brak powtórzzeń
             replace_one(wysalanie,"_",buffer[0],occurrences[0]);
        }
-       else{
+       else{ //powtórzenia
             replace(wysalanie,"_",buffer[0],occurrences);
             powtorzenia++;
        }
        free(occurrences);
        k++;
     }
+//
       memset(buffer, 0, sizeof(buffer)); 
-      printf("k= %d  size=%d powtorzneia=%d",k,size1,powtorzenia);
+
+//jeżeli zgadnięto pełne hasło - pojedynczymi literami
       if (k==size1-powtorzenia){
-      insertionSort(zgadniete,k);
-      insertionSort(haslo,k);
-      print_char_array(zgadniete,k);
-      print_char_array(haslo,k);
-      printf("%d", memcmp ( zgadniete, haslo,k ));
-       if ( memcmp ( zgadniete, haslo,k ) == 0){
-       char message[100];  
+        char message[100];  
         sprintf(message, "zgadłes haslo! \nhasło to: %s\n", ack1);
         rc = send(client, message, strlen(message) + 1, 0);
         close(client);
       break;
-       }
-      }
+      } 
+//jeżeli zgadnięto jedną literę
       char message[100];
       sprintf(message,"litera się znajduje w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s\nHasło ma %d liter \n",liczba_prob,wysalanie,size1);
       rc = send(client,message, strlen(message) + 1, 0);
-
-   
-   
     }
+//jeżeli litera jest błędna
     else{
       liczba_prob--;
       printf("znak: %s\n",buffer);
@@ -239,20 +241,14 @@ if(HELP(buffer)==0){
       break;
     }
 
-    printf("%s: hasło: %s\n", argv[0], ack);
   }
 }
-close(sd);
+//po wygranej/przegranej
+  close(sd);
   return 0;
 }
 
-void print_int_array(int arr[], int size) {
-    printf("Tablica intów:");
-    for (int i = 0; i < size; i++) {
-        printf(" %d", arr[i]);
-    }
-    printf("\n");
-}
+//sprawdza, czy litera jest w słowie
 bool check_letter(char* letter, char* word) {
     int letter_len = strlen(letter);
     for (int i = 0; word[i] != '\0'; i++) {
@@ -265,6 +261,7 @@ bool check_letter(char* letter, char* word) {
     return false;
 }
 
+//zastępuje jeden znak w haśle (wykorzystywane w ____)
 void replace_one(char* str, const char* old, char new, int index) {
     size_t old_len = strlen(old);
     
@@ -274,6 +271,7 @@ void replace_one(char* str, const char* old, char new, int index) {
         }
     }
 }
+//jak wyżej, tylko kilka
 void replace(char* str, const char* old, char new, const int* indices) {
    // print_int_array(indices,1);
     size_t old_len = strlen(old);
@@ -288,25 +286,9 @@ void replace(char* str, const char* old, char new, const int* indices) {
         }
     }
 }
-void print_char_array(char arr[], int size) {
-    for (int i = 0; i < size; i++) {
-        printf("%c ", arr[i]);
-    }
-    printf("\n");
-}
-void insertionSort(char arr[], int n) {
-    int i, key, j;
-    for (i = 1; i < n; i++) {
-        key = arr[i];
-        j = i - 1;
 
-        while (j >= 0 && arr[j] > key) {
-            arr[j + 1] = arr[j];
-            j = j - 1;
-        }
-        arr[j + 1] = key;
-    }
-}
+
+//znajduje na jakim miejscu w stringu jest znak
 int* find_character(const char* word, char character, int* count) {
     int length = 0;
     int i;
@@ -345,7 +327,7 @@ int* find_character(const char* word, char character, int* count) {
     return indices;
 }
 
-
+//usuwa powtózenia z liter
 void removeDuplicates(char arr[], int size) {
     int index = 0;  // Indeks dla unikalnych znaków
 
@@ -372,6 +354,8 @@ void removeDuplicates(char arr[], int size) {
         arr[i] = '\0';
     }
 }
+
+//do interfejsu, tworzy ciąg ___
 char* createStringWithUnderscores(int length) {
     char* str = malloc((length + 1) * sizeof(char));  // +1 dla znaku null na końcu
     
@@ -388,6 +372,8 @@ char* createStringWithUnderscores(int length) {
     
     return str;
 }
+
+//sprawdza, czy znak jest w tablicy
 bool isCharInArray(char arr[], int size, char ch) {
     for (int i = 0; i < size; i++) {
         if (arr[i] == ch) {
@@ -396,7 +382,9 @@ bool isCharInArray(char arr[], int size, char ch) {
     }
     return false;  // Znak nie jest w tablicy
 }
-const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku)
+
+//losuje słowa z bazhy
+const char* choose_word(const char* nazwa_pliku)
 {
     // Inicjalizacja generatora liczb pseudolosowych
     srand(time(NULL));
@@ -433,28 +421,8 @@ const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku)
     // Zwracanie wylosowanego slowa
     return slowa[indeks];
 }
-// bool compare ( char tab[] , char tab1[]  ){
-//  int size = sizeof(tab) / (sizeof(tab[0]));
-//  int size1 = sizeof(tab1) / (sizeof(tab1[0]));
-//  if (size1 != size){
-//    return false;
-//  }
-//  insertionSort(tab,size);
-//  insertionSort(tab1,size);
- 
- 
-//  for (int i = 0 ; i< size;i++){
-//     if( tab[i]==tab1[i]){
-//       continue;
-//     }
-//     else{
-//       return false;
-//     }
-//  }
-//  return true;
-  
-// }
 
+//sprawdzanie hasła - w wypadku wpisania całego
 bool fullcheck(char arr1[], char arr2[],int size) {
     
 
@@ -467,6 +435,7 @@ bool fullcheck(char arr1[], char arr2[],int size) {
     return true;
 }
 
+//HELP
 bool HELP(char arr[]){
 char wzor[]="HELP";
      for (int i = 0; i < 4; i++) {
@@ -477,22 +446,3 @@ char wzor[]="HELP";
     }
 }
 
-bool GAME(char arr[]){
-char wzor[]="GAME";
-     for (int i = 0; i < 4; i++) {
-        if (arr[i] != wzor[i]) {
-            return false;
-        }
-    return true;
-    }
-}
-
-bool EXIT(char arr[]){
-char wzor[]="EXIT";
-     for (int i = 0; i < 4; i++) {
-        if (arr[i] != wzor[i]) {
-            return false;
-        }
-    return true;
-    }
-}
