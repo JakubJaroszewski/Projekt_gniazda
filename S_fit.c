@@ -20,7 +20,8 @@ typedef enum { false, true } bool;
 char slowa[MAX_SLOWA][MAX_DLUGOSC_SLOWA];
 
 bool HELP(char arr[]);
-
+bool GAME(char arr[]);
+bool EXIT(char arr[]);
 bool fullcheck(char arr1[], char arr2[], int size);
 const char* losuj_i_zwroc_slowo_z_pliku(const char* nazwa_pliku);
 int* find_character(const char* word, char character, int* count);
@@ -91,10 +92,6 @@ while(1){
 
 
 
-
-//   char ack[] = "murbatron";
-//   char ack1[] = "murbatron"; // jezeli wpiszemy slowo zgadnda to nie mozemy zgadnac hasla
-
   const char* nazwa_pliku = "slowa.txt";
     const char* wylosowane_slowo = losuj_i_zwroc_slowo_z_pliku(nazwa_pliku);
 
@@ -122,6 +119,8 @@ while(1){
    int liczba_prob=15;
    int powtorzenia=0;
   while(1) {
+    
+
     memset(buffer, 0x0, sizeof(buffer));
     rc = recv(client, buffer, sizeof(buffer), 0);
     if(rc<0) {
@@ -136,18 +135,27 @@ while(1){
       break;
     }
 
+if(HELP(buffer)==0){
+     for (int i = 0 ; i< size1;i++){
+     buffer[i]=tolower(buffer[i]);
+   }
+  }
+
+
+    
     printf("%s: received %u bytes: %s\n",argv[0],rc,buffer);
 
         if(fullcheck(buffer,ack,dlugosc)){
             char mess[100];  
-            sprintf(mess, "zgadłes haslo! \nhasło to: %s", ack1);
+            sprintf(mess, "zgadłes haslo! \nhasło to: %s\n", ack1);
             rc = send(client, mess, strlen(mess) + 1, 0);
-            close(client);
+           close(client);
+  
       break;
         }
     if(rc>3){
         if(HELP(buffer)){
-        rc = send(client, "gra wisielec", strlen("gra wisielec") + 1, 0);
+        rc = send(client, "gra zgadywanie słów. użytkownik ma 15 prób na zgadnięcie pasujących liter; istnieje możliwość zgadnięcia całego hasła - jeżeli będzie błędne, gra się kończy", strlen("gra zgadywanie słów. użytkownik ma 15 prób na zgadnięcie pasujących liter; istnieje możliwość zgadnięcia całego hasła - jeżeli będzie błędne, gra się kończy") + 1, 0);
         continue; 
         }
         else{
@@ -204,26 +212,25 @@ while(1){
       printf("%d", memcmp ( zgadniete, haslo,k ));
        if ( memcmp ( zgadniete, haslo,k ) == 0){
        char message[100];  
-        sprintf(message, "zgadłes haslo! \nhasło to: %s", ack1);
+        sprintf(message, "zgadłes haslo! \nhasło to: %s\n", ack1);
         rc = send(client, message, strlen(message) + 1, 0);
-         close(client);
+        close(client);
       break;
        }
       }
       char message[100];
-      sprintf(message,"litera się znajduje w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s",liczba_prob,wysalanie);
+      sprintf(message,"litera się znajduje w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s\nHasło ma %d liter \n",liczba_prob,wysalanie,size1);
       rc = send(client,message, strlen(message) + 1, 0);
 
-    //  for(int i=0;i<k+1;i++){
-    //    printf("znak: %c\n",zgadniete[i]);}
-
-    
+   
    
     }
     else{
       liczba_prob--;
       printf("znak: %s\n",buffer);
-      rc = send(client, nieprawda, strlen(nieprawda) + 1, 0);
+      char messageb[100];
+      sprintf(messageb,"litera nie znajduje się w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s\nHasło ma %d liter \n",liczba_prob,wysalanie,size1);
+      rc = send(client,messageb, strlen(messageb) + 1, 0);
       
     }
     if(rc<0) {
@@ -338,62 +345,6 @@ int* find_character(const char* word, char character, int* count) {
     return indices;
 }
 
-
-// int* find_character(const char* word, char character, int* count) {
-//     int length = 0;
-//     int i;
-    
-//     // Zliczanie liczby wystąpień danego znaku w słowie
-//     for (i = 0; word[i] != '\0'; i++) {
-//         // printf("znak %d: %c \n",i, word[i]);
-//         // printf("litera %d: %c \n",i, character);
-//         if (word[i] == character) {
-//             length++;
-//         }
-//     }
-//     // Tworzenie tablicy dla indeksów znalezionych znaków
-//     int* indices = (int*)malloc(length* sizeof(int));
-//     int index = 0;
-    
-//     // Zapisywanie indeksów znalezionych znaków
-//     for (i = 0;  word[i] != '\0' ; i++) {
-//         if (word[i] == character) {
-//             indices[index++] = i;
-            
-//         }
-//     }
-//     *count = length; // Przekazanie liczby wystąpień przez wskaźnik
-//     if (length == 1){
-//         return indices[0];
-//     }
-//     else{
-//         return indices;
-//     }
-// }
-// int* findCharOccurrences(char character, const char* string, int* numOccurrences) {
-    
-//     int length = strlen(string);
-//     int* occurrences = malloc(length * sizeof(int));
-//     print_int_array(occurrences,2);
-//     int index = 0;
-//     printf("\n %c",string[0]);
-
-//     for (int i = 0; i < length+1; i++) { /*
-//     tutaj jest problem z ta dlugościa, nie rozkmniałem tego jakos długo dlaczego nie działa poprtu troche potestowałem i zoabczłem ze nie wypisuje odpowiedniej dluosci tablicy wiec stad to +1, ale cos jeszcze jest tutaj skurwione ewidentnie*/
-//         if (string[i] == character) {
-//             occurrences[index] = i;
-//             index++;
-//         }
-//     }
-
-//     if (index == 0) {
-//         free(occurrences);
-//         return NULL;
-//     }
-//     *numOccurrences = index;
-    
-//     return occurrences;
-// }
 
 void removeDuplicates(char arr[], int size) {
     int index = 0;  // Indeks dla unikalnych znaków
@@ -518,6 +469,26 @@ bool fullcheck(char arr1[], char arr2[],int size) {
 
 bool HELP(char arr[]){
 char wzor[]="HELP";
+     for (int i = 0; i < 4; i++) {
+        if (arr[i] != wzor[i]) {
+            return false;
+        }
+    return true;
+    }
+}
+
+bool GAME(char arr[]){
+char wzor[]="GAME";
+     for (int i = 0; i < 4; i++) {
+        if (arr[i] != wzor[i]) {
+            return false;
+        }
+    return true;
+    }
+}
+
+bool EXIT(char arr[]){
+char wzor[]="EXIT";
      for (int i = 0; i < 4; i++) {
         if (arr[i] != wzor[i]) {
             return false;

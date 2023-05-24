@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <unistd.h> /* close */
 #include <string.h> /* memset() */
+typedef enum { false, true } bool;
+bool GAME(char arr[]);
+bool EXIT(char arr[]);
 
 int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
 
@@ -55,7 +58,7 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
   char bufor1[500];
   char zgadniete[500];
   int k =0;
-  printf("Podaj wiadomość (wpisz /quit, aby wyjść):\n");
+  printf("Gra zgadywanie słów. Wpisz literę, by sprawdzić czy jest w haśle.  (wpisz znak / aby wyjść, HELP by wywołać pomoc):\n");
   
   while (1){
 	  fgets(bufor, 500, stdin);
@@ -63,6 +66,12 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
 	  if (bufor[0] == '/')
 		break;
 	  
+      if(EXIT(bufor)){
+            printf("KONIEC");
+         close(sd);
+        break;}
+
+
 	  rc = send(sd, bufor, strlen(bufor)+1, 0);
 	  
 	  if(rc<0) {
@@ -106,3 +115,22 @@ int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
 }
 
 
+bool GAME(char arr[]){
+char wzor[]="GAME";
+     for (int i = 0; i < 4; i++) {
+        if (arr[i] != wzor[i]) {
+            return false;
+        }
+    return true;
+    }
+}
+
+bool EXIT(char arr[]){
+char wzor[]="EXIT";
+     for (int i = 0; i < 4; i++) {
+        if (arr[i] != wzor[i]) {
+            return false;
+        }
+    return true;
+    }
+}
