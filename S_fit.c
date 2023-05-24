@@ -13,6 +13,7 @@
 #include <unistd.h> /* close */
 #include <string.h> /* memset() */
 #include <time.h>
+#include <ctype.h>
 
 #define MAX_SLOWA 100
 #define MAX_DLUGOSC_SLOWA 50
@@ -113,7 +114,6 @@ while(1){
     removeDuplicates(ack,size2);
 
   int size1=sizeof(ack) / sizeof(ack[0]);
-  char haslo[size1];
 
 //tablica zgadniętych liter
   char zgadniete[size1];
@@ -172,16 +172,13 @@ if(HELP(buffer)==0){ //HELP wielkimi wywołuje pomoc, HELP nie chcemy pomniejsza
                 char messag[100];
                 sprintf(messag, "Koniec gry, błędne hasło");
                 rc = send(client, messag, strlen(messag) + 1, 0);
-                liczba_prob==0;
+                liczba_prob=0;
                 close(client);
                 break;}
     }
     }
 
 
-    for (int i = 0 ; i< size1;i++){
-        haslo[i]=ack[i];
-    }
 
 //sprawdzanie, czy litera jest w haśle
     if (check_letter(buffer,ack)){ 
@@ -229,7 +226,6 @@ if(HELP(buffer)==0){ //HELP wielkimi wywołuje pomoc, HELP nie chcemy pomniejsza
 //jeżeli litera jest błędna
     else{
       liczba_prob--;
-      printf("znak: %s\n",buffer);
       char messageb[100];
       sprintf(messageb,"litera nie znajduje się w haśle \nPozostała liczba prób: %d\nPozostale znaki: %s\nHasło ma %d liter \n",liczba_prob,wysalanie,size1);
       rc = send(client,messageb, strlen(messageb) + 1, 0);
@@ -240,7 +236,6 @@ if(HELP(buffer)==0){ //HELP wielkimi wywołuje pomoc, HELP nie chcemy pomniejsza
       close(client);
       break;
     }
-
   }
 }
 //po wygranej/przegranej
@@ -286,7 +281,6 @@ void replace(char* str, const char* old, char new, const int* indices) {
         }
     }
 }
-
 
 //znajduje na jakim miejscu w stringu jest znak
 int* find_character(const char* word, char character, int* count) {
