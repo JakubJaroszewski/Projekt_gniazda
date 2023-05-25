@@ -1,7 +1,8 @@
-/* fpont 12/99 */
-/* pont.net    */
-/* tcpServer.c */
-/* korekta W.Bajdecki 2009, 2019, 2023 */
+//Paulina Rudzka i Jakub Jaroszewski
+//SK 2023
+//Część programu związana a gniazdami ze źródła: program W. Bajdeckiego
+
+
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,6 +15,7 @@
 #include <string.h> /* memset() */
 #include <time.h>
 #include <ctype.h>
+#include <string.h>
 
 #define MAX_SLOWA 100
 #define MAX_DLUGOSC_SLOWA 50
@@ -35,7 +37,7 @@ void replace_one(char* str, const char* old, char new, int index);
 int* findCharOccurrences(char character, const char* string, int* numOccurrences) ;
 
 
-int main (int argc, char *argv[]) { /* licznik argumentow, tablica argumentow */
+int main (int argc, char* argv[]) { // licznik argumentow, tablica argumentow 
 
   const int PORT=1500;
 
@@ -118,7 +120,7 @@ while(1){
 //tablica zgadniętych liter
   char zgadniete[size1];
 
-//utworzenie stringa zawierającego same "_______"
+//utworzenie stringa zawierającego same "_____"
   char* wysalanie = createStringWithUnderscores(size1);
 
 //k - liczba zgadniętych liter
@@ -178,11 +180,7 @@ if(HELP(buffer)==0){ //HELP wielkimi wywołuje pomoc, HELP nie chcemy pomniejsza
     }
     }
 
-
-
-//sprawdzanie, czy litera jest w haśle
-    if (check_letter(buffer,ack)){ 
-    if (liczba_prob == 0){ //koniec prób, koniec gry
+if (liczba_prob == 0){ //koniec prób, koniec gry
       char message[37];
       sprintf(message, "Koniec gry, zbyt duża liczba prób");
       rc = send(client, message, strlen(message) + 1, 0);
@@ -190,6 +188,10 @@ if(HELP(buffer)==0){ //HELP wielkimi wywołuje pomoc, HELP nie chcemy pomniejsza
       break;
 
     }
+
+//sprawdzanie, czy litera jest w haśle
+    if (check_letter(buffer,ack)){ 
+    
 
 //sprawdzenie, czy litera jest już w bazie zgadniętych liter
     if ( ! isCharInArray(zgadniete,size1,buffer[0])){
@@ -256,7 +258,7 @@ bool check_letter(char* letter, char* word) {
     return false;
 }
 
-//zastępuje jeden znak w haśle (wykorzystywane w ____)
+//zastępuje jeden znak w haśle (wykorzystywane w __)
 void replace_one(char* str, const char* old, char new, int index) {
     size_t old_len = strlen(old);
     
@@ -295,16 +297,7 @@ int* find_character(const char* word, char character, int* count) {
         }
     }
     
-    // Tworzenie tablicy dla indeksów znalezionych znaków
-    if (length == 1) {
-        indices = (int*)malloc(sizeof(int));
-        for (i = 0; word[i] != '\0'; i++) {
-            if (word[i] == character) {
-                indices[0] = i;
-                break;
-            }
-        }
-    } else {
+
         indices = (int*)malloc(length * sizeof(int));
         int index = 0;
         
@@ -314,7 +307,7 @@ int* find_character(const char* word, char character, int* count) {
                 indices[index++] = i;
             }
         }
-    }
+    
     
     *count = length; // Przekazanie liczby wystąpień przez wskaźnik
     
@@ -342,14 +335,9 @@ void removeDuplicates(char arr[], int size) {
             index++;
         }
     }
-
-    // Wypełnij pozostałe miejsca w tablicy znakiem null terminatora
-    for (int i = index; i < size; i++) {
-        arr[i] = '\0';
-    }
 }
 
-//do interfejsu, tworzy ciąg ___
+//do interfejsu, tworzy ciąg _
 char* createStringWithUnderscores(int length) {
     char* str = malloc((length + 1) * sizeof(char));  // +1 dla znaku null na końcu
     
@@ -360,10 +348,7 @@ char* createStringWithUnderscores(int length) {
     
     for (int i = 0; i < length; i++) {
         str[i] = '_';
-    }
-    
-    str[length] = '\0';  // Dodanie znaku null na końcu
-    
+    }    
     return str;
 }
 
@@ -439,4 +424,3 @@ char wzor[]="HELP";
     return true;
     }
 }
-
