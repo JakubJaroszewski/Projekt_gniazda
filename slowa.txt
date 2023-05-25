@@ -19,9 +19,8 @@ kwant
 fizyka
 wektor
 macierz
-anakonda
 warsztat
-audytorium
+audyt
 schody
 sinus
 laptop
@@ -31,7 +30,7 @@ internet
 marmur
 rysunek
 krytyk
-absolutorium
+absolutny
 komisja
 koordynacja
 sukces
